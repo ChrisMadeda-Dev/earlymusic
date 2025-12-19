@@ -11,19 +11,17 @@ const SongList = ({ songs = [], onSongSelect }) => {
           <Disc className="text-red-600 animate-spin-slow" size={32} />
         </div>
         <h3 className="text-lg font-bold text-neutral-900">No music found</h3>
-        <p className="text-neutral-500 text-sm max-w-[240px]">
-          There are no tracks currently available in the public library.
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-y-2">
-      {songs.map((song) => (
+    <div className="flex flex-col gap-y-1">
+      {songs.map((song, index) => (
         <SongItem
           key={song.id}
           song={song}
+          number={index + 1} // Passing the order number
           onClick={() => onSongSelect(song)}
         />
       ))}

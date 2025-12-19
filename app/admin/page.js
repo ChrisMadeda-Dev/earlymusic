@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import { Trash2, Upload, ArrowLeft, Loader2 } from "lucide-react";
+import { Trash2, Upload, ArrowLeft, ShieldCheck } from "lucide-react";
 import UploadModal from "../components/UploadModal";
 
 export default function AdminDashboard() {
@@ -11,30 +11,60 @@ export default function AdminDashboard() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
+  const router = useRouter();
+  const timeoutRef = useRef(null);
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const sessionAuth = localStorage.getItem("admin_auth");
+  const handleLogout = () => {
+    sessionStorage.removeItem("admin_auth");
+    router.push("/");
+  };
 
-      if (sessionAuth === ADMIN_PASSWORD) {
+  const resetTimer = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    // 5 Minute Inactivity Timeout
+    timeoutRef.current = setTimeout(() => handleLogout(), 300000);
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkAuth = () => {
+      const sessionAuth = sessionStorage.getItem("admin_auth");
+
+      if (sessionAuth === ADMIN_PASSWORD && ADMIN_PASSWORD) {
         setIsAuthorized(true);
         fetchSongs();
+        setupListeners();
       } else {
         const password = prompt("Admin Access Required:");
-        if (password === ADMIN_PASSWORD) {
-          localStorage.setItem("admin_auth", password);
+        if (password === ADMIN_PASSWORD && ADMIN_PASSWORD) {
+          sessionStorage.setItem("admin_auth", password);
           setIsAuthorized(true);
           fetchSongs();
+          setupListeners();
         } else {
           router.push("/");
         }
       }
       setLoading(false);
     };
+
+    const setupListeners = () => {
+      resetTimer();
+      window.addEventListener("mousemove", resetTimer);
+      window.addEventListener("keydown", resetTimer);
+    };
+
     checkAuth();
+
+    return () => {
+      window.removeEventListener("mousemove", resetTimer);
+      window.removeEventListener("keydown", resetTimer);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      sessionStorage.removeItem("admin_auth");
+    };
   }, [router, ADMIN_PASSWORD]);
 
   const fetchSongs = async () => {
@@ -65,14 +95,17 @@ export default function AdminDashboard() {
         <header className="flex justify-between items-center mb-12">
           <div>
             <button
-              onClick={() => router.push("/")}
+              onClick={handleLogout}
               className="text-neutral-400 hover:text-red-600 flex items-center gap-2 mb-2 transition"
             >
-              <ArrowLeft size={16} /> Exit Panel
+              <ArrowLeft size={16} /> Exit & Lock
             </button>
-            <h1 className="text-4xl font-black text-neutral-900 tracking-tighter uppercase">
-              Management
-            </h1>
+            <div className="flex items-center gap-x-2">
+              <h1 className="text-4xl font-black text-neutral-900 tracking-tighter uppercase">
+                Management
+              </h1>
+              <ShieldCheck size={20} className="text-green-500" />
+            </div>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
@@ -82,23 +115,30 @@ export default function AdminDashboard() {
           </button>
         </header>
 
-        <div className="grid gap-3">
-          {songs.map((song) => (
+        <div className="grid gap-2">
+          {songs.map((song, index) => (
             <div
               key={song.id}
-              className="bg-neutral-50 p-5 rounded-2xl flex items-center justify-between group border border-transparent hover:border-neutral-200 transition-all"
+              className="bg-neutral-50 p-4 rounded-xl flex items-center justify-between group border border-transparent hover:border-neutral-200 transition-all"
             >
-              <div>
-                <p className="font-bold text-neutral-900">{song.title}</p>
-                <p className="text-[10px] text-neutral-400 uppercase font-bold tracking-widest">
-                  {song.author}
-                </p>
+              <div className="flex items-center gap-x-4">
+                <span className="text-[10px] font-black text-neutral-300 w-4">
+                  {index + 1}
+                </span>
+                <div>
+                  <p className="font-bold text-neutral-900 text-sm">
+                    {song.title}
+                  </p>
+                  <p className="text-[10px] text-neutral-400 uppercase font-bold tracking-widest">
+                    {song.author}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => handleDelete(song.id, song.song_path)}
                 className="text-neutral-200 hover:text-red-600 transition"
               >
-                <Trash2 size={20} />
+                <Trash2 size={18} />
               </button>
             </div>
           ))}

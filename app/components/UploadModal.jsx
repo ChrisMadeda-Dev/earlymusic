@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { X } from "lucide-react";
+import { X, UploadCloud } from "lucide-react";
 
 const UploadModal = ({ isOpen, onClose, onSuccess }) => {
   const [title, setTitle] = useState("");
@@ -19,7 +19,6 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       setIsLoading(true);
 
-      // 1. Upload file to Supabase Storage
       const fileExt = songFile.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
@@ -30,7 +29,6 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (uploadError) throw uploadError;
 
-      // 2. Insert record to Database
       const { error: dbError } = await supabase.from("songs").insert({
         title: title,
         author: author,
@@ -39,14 +37,14 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (dbError) throw dbError;
 
-      onSuccess(); // Trigger refresh in page.js
-      onClose(); // Close modal
+      onSuccess();
+      onClose();
       setTitle("");
       setAuthor("");
       setSongFile(null);
     } catch (error) {
       console.error(error);
-      alert("Error uploading song. Check console.");
+      alert("Error uploading song.");
     } finally {
       setIsLoading(false);
     }
@@ -62,64 +60,74 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold mb-1 text-neutral-900">
+        <h2 className="text-2xl font-black mb-1 text-neutral-900 tracking-tighter uppercase">
           Upload Track
         </h2>
-        <p className="text-neutral-500 mb-6 text-sm">
-          Add your latest creation to the library.
+        <p className="text-neutral-500 mb-6 text-xs font-bold uppercase tracking-wider">
+          Add to library
         </p>
 
         <form onSubmit={handleUpload} className="flex flex-col gap-y-5">
           <div className="flex flex-col gap-y-1">
-            <label className="text-xs font-bold uppercase text-neutral-400 ml-1">
-              Title
+            <label className="text-[10px] font-black uppercase text-neutral-500 ml-1 tracking-widest">
+              Track Title
             </label>
             <input
               type="text"
               placeholder="e.g., Ujazaye"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600 transition"
+              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600 focus:bg-white text-neutral-900 font-bold placeholder:text-neutral-400 transition"
               required
             />
           </div>
 
           <div className="flex flex-col gap-y-1">
-            <label className="text-xs font-bold uppercase text-neutral-400 ml-1">
-              Artist
+            <label className="text-[10px] font-black uppercase text-neutral-500 ml-1 tracking-widest">
+              Artist Name
             </label>
             <input
               type="text"
               placeholder="e.g., Pastor Marita Mbae"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600 transition"
+              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600 focus:bg-white text-neutral-900 font-bold placeholder:text-neutral-400 transition"
               required
             />
           </div>
 
-          <div className="p-4 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50 hover:border-red-300 transition cursor-pointer relative">
+          <div className="p-6 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50 hover:border-red-300 transition cursor-pointer relative group">
             <input
               type="file"
               accept=".mp3"
               onChange={(e) => setSongFile(e.target.files[0])}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute inset-0 opacity-0 cursor-pointer z-10"
               required
             />
-            <div className="text-center">
-              <p className="text-sm font-bold text-neutral-700">
+            <div className="text-center flex flex-col items-center">
+              <UploadCloud
+                className={`mb-2 ${
+                  songFile
+                    ? "text-red-600"
+                    : "text-neutral-300 group-hover:text-red-400"
+                } transition-colors`}
+                size={32}
+              />
+              <p className="text-sm font-black text-neutral-900 truncate max-w-full px-2">
                 {songFile ? songFile.name : "Choose MP3 File"}
               </p>
-              <p className="text-xs text-neutral-400 mt-1">Audio files only</p>
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter mt-1">
+                Max size: 10MB
+              </p>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-red-600 py-4 rounded-xl text-white font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            className="bg-red-600 py-4 rounded-xl text-white font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
-            {isLoading ? "Uploading Track..." : "Publish to earlymusic"}
+            {isLoading ? "Uploading..." : "Publish Track"}
           </button>
         </form>
       </div>

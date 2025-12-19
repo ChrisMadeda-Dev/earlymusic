@@ -1,63 +1,69 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Search, Library, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { Home, Search, Library } from "lucide-react";
+import LikedSongs from "./LikedSongs";
 
 const Sidebar = () => {
   const pathname = usePathname();
 
   const routes = [
-    { icon: Home, label: "Home", href: "/", active: pathname === "/" },
+    {
+      icon: Home,
+      label: "Home",
+      active: pathname === "/",
+      href: "/",
+    },
     {
       icon: Search,
       label: "Search",
-      href: "/search",
       active: pathname === "/search",
+      href: "/search",
     },
   ];
 
   return (
-    <div className="hidden md:flex flex-col gap-y-2 h-full w-[260px] bg-neutral-50 p-3 border-r border-neutral-100">
-      <div className="bg-white rounded-2xl flex flex-col gap-y-4 px-5 py-6 shadow-sm">
-        {routes.map((item) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            className={`flex items-center w-full gap-x-4 text-sm font-bold cursor-pointer hover:text-red-600 transition-all ${
-              item.active ? "text-red-600" : "text-neutral-500"
-            }`}
-          >
-            <item.icon size={22} />
-            <p className="truncate w-full">{item.label}</p>
-          </Link>
-        ))}
+    <aside className="hidden md:flex flex-col bg-[#f9f9f9] h-full w-[260px] lg:w-[300px] p-4 gap-y-4 sticky top-0">
+      {/* Top Navigation Block */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral-100/50">
+        <nav className="flex flex-col gap-y-6">
+          {routes.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`
+                flex items-center gap-x-4 text-sm font-bold transition cursor-pointer hover:text-red-600
+                ${item.active ? "text-red-600" : "text-neutral-500"}
+              `}
+            >
+              <item.icon size={20} strokeWidth={item.active ? 2.5 : 2} />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </nav>
       </div>
 
-      <div className="bg-white rounded-2xl flex-1 px-5 py-6 shadow-sm flex flex-col">
-        <div className="flex items-center gap-x-2 text-neutral-400 mb-4">
-          <Library size={20} />
-          <p className="font-bold text-xs uppercase tracking-widest">Library</p>
-        </div>
+      {/* Bottom Library & Liked Songs Block */}
+      <div className="bg-white rounded-xl p-6 flex-1 shadow-sm border border-neutral-100/50 overflow-hidden flex flex-col">
+        <Link
+          href="/library"
+          className={`
+            flex items-center gap-x-4 text-sm font-bold mb-8 transition cursor-pointer hover:text-red-600
+            ${pathname === "/library" ? "text-red-600" : "text-neutral-400"}
+          `}
+        >
+          <Library size={20} strokeWidth={pathname === "/library" ? 2.5 : 2} />
+          <span className="uppercase tracking-[0.2em] text-[11px]">
+            Library
+          </span>
+        </Link>
 
-        {/* This is the hidden Admin link at the bottom */}
-        <div className="mt-auto pt-4 border-t border-neutral-50">
-          <Link
-            href="/admin"
-            className="flex items-center gap-x-3 text-neutral-200 hover:text-neutral-400 transition-colors group"
-            title="Admin Dashboard"
-          >
-            <Settings
-              size={16}
-              className="group-hover:rotate-45 transition-transform"
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em]">
-              System
-            </p>
-          </Link>
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          <LikedSongs />
         </div>
       </div>
-    </div>
+    </aside>
   );
 };
 
