@@ -9,6 +9,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
   const [author, setAuthor] = useState("");
   const [songFile, setSongFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0); // Track progress percentage
 
   if (!isOpen) return null;
 
@@ -18,14 +19,24 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       setIsLoading(true);
+      setUploadProgress(0); // Reset progress
 
       const fileExt = songFile.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      // Upload to Supabase with progress tracking
       const { error: uploadError } = await supabase.storage
         .from("songs")
-        .upload(filePath, songFile);
+        .upload(filePath, songFile, {
+          cacheControl: "3600",
+          upsert: false,
+          // Corrected progress listener for real-time state updates
+          onUploadProgress: (progress) => {
+            const percentage = (progress.loaded / progress.total) * 100;
+            setUploadProgress(Math.round(percentage));
+          },
+        });
 
       if (uploadError) throw uploadError;
 
@@ -42,6 +53,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
       setTitle("");
       setAuthor("");
       setSongFile(null);
+      setUploadProgress(0);
     } catch (error) {
       console.error(error);
       alert("Error uploading song.");
@@ -51,8 +63,8 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md p-8 relative shadow-2xl border border-neutral-100">
+    <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md p-8 relative shadow-2xl border border-neutral-100 animate-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900 transition"
@@ -102,7 +114,8 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
               accept=".mp3"
               onChange={(e) => setSongFile(e.target.files[0])}
               className="absolute inset-0 opacity-0 cursor-pointer z-10"
-              required
+              required={!isLoading}
+              disabled={isLoading}
             />
             <div className="text-center flex flex-col items-center">
               <UploadCloud
@@ -116,18 +129,31 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
               <p className="text-sm font-black text-neutral-900 truncate max-w-full px-2">
                 {songFile ? songFile.name : "Choose MP3 File"}
               </p>
-              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter mt-1">
-                Max size: 10MB
-              </p>
             </div>
           </div>
+
+          {/* UPLOAD PROGRESS UI - Updated for visibility */}
+          {isLoading && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="flex justify-between items-center text-[10px] font-black uppercase text-red-600 tracking-widest">
+                <span>Uploading to server</span>
+                <span className="tabular-nums">{uploadProgress}%</span>
+              </div>
+              <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-red-600 transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={isLoading}
             className="bg-red-600 py-4 rounded-xl text-white font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
-            {isLoading ? "Uploading..." : "Publish Track"}
+            {isLoading ? `Publishing ${uploadProgress}%` : "Publish Track"}
           </button>
         </form>
       </div>

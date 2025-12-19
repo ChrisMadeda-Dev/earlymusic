@@ -12,12 +12,17 @@ export default function Home() {
 
   useEffect(() => {
     const fetchSongs = async () => {
-      const { data } = await supabase
-        .from("songs")
-        .select("*")
-        .order("title", { ascending: true });
-      if (data) setSongs(data);
-      setIsLoading(false);
+      try {
+        const { data } = await supabase
+          .from("songs")
+          .select("*")
+          .order("title", { ascending: true });
+        if (data) setSongs(data);
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchSongs();
   }, [setSongs]);
@@ -34,32 +39,38 @@ export default function Home() {
   const alphabet = Object.keys(groupedSongs).sort();
 
   return (
-    <div className="px-6 py-4">
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <div className="flex flex-col gap-y-12">
-          {alphabet.map((letter) => (
-            <div key={letter} className="flex flex-col gap-y-4">
-              <div className="border-b border-neutral-100 pb-2">
-                <h2 className="text-2xl font-black text-red-600 uppercase tracking-tighter">
-                  {letter}
-                </h2>
+    <main className="min-h-[90vh] bg-white px-6 py-8 pb-32">
+      <div className="max-w-5xl mx-auto">
+        {isLoading ? (
+          <Loader />
+        ) : (
+          <div className="flex flex-col gap-y-10">
+            {alphabet.map((letter) => (
+              <div key={letter} className="flex flex-col gap-y-4">
+                {/* ALPHABETIC HEADER - Simple Font */}
+                <div className="flex items-center gap-x-4 border-b border-neutral-50 pb-3 px-2">
+                  <h2 className="text-3xl font-semibold text-red-600 tracking-tight">
+                    {letter}
+                  </h2>
+                  <div className="h-[1px] flex-1 bg-transparent" />
+                </div>
+
+                {/* TRACK LISTING */}
+                <div className="flex flex-col gap-y-1">
+                  {groupedSongs[letter].map((song) => (
+                    <SongItem
+                      key={song.id}
+                      song={song}
+                      // Number prop removed for the clean simple font look
+                      onClick={() => setActiveSong(song)}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-col gap-y-1">
-                {groupedSongs[letter].map((song, index) => (
-                  <SongItem
-                    key={song.id}
-                    song={song}
-                    number={index + 1}
-                    onClick={() => setActiveSong(song)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

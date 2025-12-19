@@ -10,11 +10,11 @@ const Header = () => {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-[200] bg-white border-b border-neutral-100 px-6 py-5">
+    <header className="sticky top-0 z-[200] bg-white border-b border-neutral-300 px-6 py-5">
       <div className="flex items-center justify-between">
         {/* Title updated to Scarlet color */}
         <Link href="/">
-          <h1 className="text-xl font-black tracking-tighter uppercase text-black leading-none">
+          <h1 className="text-2xl font-black tracking-tighter uppercase text-black leading-none">
             earlymusic
           </h1>
         </Link>

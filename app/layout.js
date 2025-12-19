@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-white text-neutral-900 antialiased">
         <PlayerProvider>
-          {/* The 90vh Shell */}
+          {/* Main App Shell */}
           <div className="flex flex-col md:flex-row min-h-[90vh] h-screen overflow-hidden">
             <Sidebar />
 
@@ -23,11 +23,14 @@ export default function RootLayout({ children }) {
               <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
                 {children}
               </div>
-
-              {/* PlayerWrapper handles the portal logic globally */}
-              <PlayerWrapper />
             </main>
           </div>
+
+          {/* THE FIX: Place the Player outside the main shell. 
+             Now, no matter what happens inside 'children' (including going to /admin), 
+             this component stays mounted.
+          */}
+          <PlayerWrapper />
         </PlayerProvider>
       </body>
     </html>

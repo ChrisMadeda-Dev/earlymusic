@@ -24,7 +24,7 @@ const Player = ({ song, songs, onSongSelect }) => {
   const [volume, setVolume] = useState(1);
   const [audioUrl, setAudioUrl] = useState(null);
 
-  const currentIndex = songs.findIndex((s) => s.id === song.id);
+  const currentIndex = (songs || []).findIndex((s) => s.id === song.id);
 
   useEffect(() => {
     if (song) {
@@ -38,11 +38,13 @@ const Player = ({ song, songs, onSongSelect }) => {
   }, [song]);
 
   const onPlayNext = () => {
+    if (!songs || songs.length === 0) return;
     const nextIndex = (currentIndex + 1) % songs.length;
     onSongSelect(songs[nextIndex]);
   };
 
   const onPlayPrevious = () => {
+    if (!songs || songs.length === 0) return;
     const prevIndex = currentIndex === 0 ? songs.length - 1 : currentIndex - 1;
     onSongSelect(songs[prevIndex]);
   };
@@ -68,8 +70,8 @@ const Player = ({ song, songs, onSongSelect }) => {
   if (!song || !audioUrl) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[1000] bg-white/95 backdrop-blur-xl border-t border-neutral-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-      {/* 1. PROGRESS BAR - Edge-to-Edge */}
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-white/95 backdrop-blur-xl border-t border-neutral-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] h-auto md:h-24">
+      {/* PROGRESS BAR */}
       <div className="absolute -top-[1px] left-0 w-full h-[3px] bg-neutral-100 group cursor-pointer">
         <input
           type="range"
@@ -91,60 +93,38 @@ const Player = ({ song, songs, onSongSelect }) => {
         />
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-5 py-3 md:px-8 md:py-4">
-        <div className="flex flex-col md:flex-row items-center gap-y-3 md:justify-between">
-          {/* TRACK INFO BLOCK */}
-          <div className="flex items-center justify-between w-full md:w-[30%] min-w-0">
-            <div className="flex items-center gap-x-3 min-w-0">
-              <div className="w-10 h-10 bg-neutral-900 rounded-lg flex-shrink-0 flex items-center justify-center shadow-lg">
-                <Disc
-                  className={`text-white ${
-                    isPlaying ? "animate-spin-slow" : ""
-                  }`}
-                  size={18}
-                />
-              </div>
-              <div className="truncate">
-                <p className="font-black text-[12px] text-neutral-900 truncate uppercase tracking-tighter leading-none mb-1">
-                  {song.title}
-                </p>
-                <p className="text-[10px] font-bold text-neutral-400 truncate uppercase tracking-widest">
-                  {song.author}
-                </p>
-              </div>
+      <div className="max-w-[1400px] mx-auto px-5 py-3 md:px-8 h-full">
+        <div className="flex flex-col md:flex-row items-center justify-between h-full gap-y-3">
+          {/* TRACK INFO */}
+          <div className="flex items-center gap-x-3 w-full md:w-[30%] min-w-0">
+            <div className="w-10 h-10 bg-neutral-900 rounded-lg flex-shrink-0 flex items-center justify-center shadow-lg">
+              <Disc
+                className={`text-white ${isPlaying ? "animate-spin-slow" : ""}`}
+                size={18}
+              />
             </div>
-
-            {/* Mobile Loop/Restart Toggle */}
-            <div className="flex items-center gap-x-4 md:hidden text-neutral-300">
-              <button
-                onClick={() => setIsLooping(!isLooping)}
-                className={isLooping ? "text-red-600" : ""}
-              >
-                <Repeat size={16} />
-              </button>
-              <button
-                onClick={() => {
-                  audioRef.current.currentTime = 0;
-                }}
-              >
-                <RotateCcw size={16} />
-              </button>
+            <div className="truncate">
+              <p className="font-black text-[12px] text-neutral-900 truncate uppercase tracking-tighter mb-1">
+                {song.title}
+              </p>
+              <p className="text-[10px] font-bold text-neutral-400 truncate uppercase tracking-widest">
+                {song.author}
+              </p>
             </div>
           </div>
 
-          {/* PLAYBACK CONTROLS BLOCK */}
+          {/* CONTROLS */}
           <div className="flex flex-col items-center gap-y-1 w-full md:flex-1">
-            <div className="flex items-center justify-center gap-x-8 md:gap-x-10">
+            <div className="flex items-center justify-center gap-x-8">
               <button
                 onClick={onPlayPrevious}
                 className="text-neutral-900 active:scale-90 transition"
               >
                 <SkipBack size={24} fill="currentColor" />
               </button>
-
               <button
                 onClick={togglePlay}
-                className="bg-red-600 rounded-full h-12 w-12 md:h-14 md:w-14 flex items-center justify-center text-white shadow-lg shadow-red-200 active:scale-95 transition-transform"
+                className="bg-red-600 rounded-full h-12 w-12 flex items-center justify-center text-white shadow-lg active:scale-95 transition"
               >
                 {isPlaying ? (
                   <Pause size={24} fill="currentColor" />
@@ -152,7 +132,6 @@ const Player = ({ song, songs, onSongSelect }) => {
                   <Play size={24} fill="currentColor" className="ml-1" />
                 )}
               </button>
-
               <button
                 onClick={onPlayNext}
                 className="text-neutral-900 active:scale-90 transition"
@@ -160,14 +139,13 @@ const Player = ({ song, songs, onSongSelect }) => {
                 <SkipForward size={24} fill="currentColor" />
               </button>
             </div>
-
             <div className="text-[9px] text-neutral-400 font-black tracking-[0.2em] tabular-nums uppercase">
               {formatTime(currentTime)} / {formatTime(duration)}
             </div>
           </div>
 
-          {/* VOLUME BLOCK - Hidden on very small screens, shown on tablets up */}
-          <div className="hidden sm:flex items-center gap-x-3 w-full md:w-[30%] justify-end">
+          {/* VOLUME */}
+          <div className="hidden md:flex items-center gap-x-3 w-[30%] justify-end">
             <button
               onClick={toggleMute}
               className="text-neutral-400 hover:text-red-600 transition"
@@ -187,9 +165,7 @@ const Player = ({ song, songs, onSongSelect }) => {
               onChange={(e) => {
                 const v = Number(e.target.value);
                 setVolume(v);
-                if (audioRef.current) {
-                  audioRef.current.volume = v;
-                }
+                if (audioRef.current) audioRef.current.volume = v;
                 if (v > 0) setIsMuted(false);
               }}
               className="w-24 h-1 accent-red-600 bg-neutral-100 rounded-lg appearance-none cursor-pointer"
