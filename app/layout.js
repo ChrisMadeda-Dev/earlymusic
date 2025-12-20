@@ -6,9 +6,9 @@ import { PlayerProvider } from "./context/PlayerContext";
 import { Analytics } from "@vercel/analytics/react";
 import InstallPrompt from "./components/InstallPrompt";
 
-// NEW: In Next.js 14+, Viewport and ThemeColor must be exported separately
+// UPDATED: Theme color changed to white for the mobile top bar
 export const viewport = {
-  themeColor: "#dc2626",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -20,10 +20,11 @@ export const metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
+    // "default" ensures a white background with dark text/icons on iOS
     statusBarStyle: "default",
     title: "Early Music",
   },
-  // Ensure icons are mapped for PWA and iOS discovery
+  // Mapping icons for PWA and iOS discovery
   icons: {
     icon: "/icons/icon-192x192.png",
     apple: "/icons/icon-192x192.png",
@@ -56,10 +57,7 @@ export default function RootLayout({ children }) {
           {/* Analytics: Vercel usage tracking */}
           <Analytics />
 
-          {/* InstallPrompt: 
-              This component should handle the 'beforeinstallprompt' event 
-              to show your custom "Download" button.
-          */}
+          {/* InstallPrompt: Custom PWA installation logic */}
           <InstallPrompt />
         </PlayerProvider>
       </body>
