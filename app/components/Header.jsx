@@ -10,7 +10,11 @@ const Header = () => {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-[200] bg-white border-b border-neutral-200 px-6 py-5">
+    /* FIXED: Changed to 'fixed' for mobile and ensured it stays at the top. 
+      Added 'pt-[env(safe-area-inset-top)]' to ensure it doesn't overlap 
+      with the iOS/Android status bar content now that the bar is white.
+    */
+    <header className="fixed md:sticky top-0 left-0 right-0 z-[200] bg-white border-b border-neutral-200 px-6 py-5 pt-[calc(1.25rem+env(safe-area-inset-top))] md:pt-5">
       <div className="flex items-center justify-between">
         {/* Title updated to Scarlet color */}
         <Link href="/">
