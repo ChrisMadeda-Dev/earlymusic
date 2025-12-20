@@ -1,21 +1,29 @@
 import withPWAInit from "next-pwa";
 
 /** @type {import('next').NextConfig} */
-const withPWA = withPWAInit({
+const pwaConfig = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
-  // PWA is disabled in local development to avoid caching issues while coding
+  // This ensures the service worker is updated immediately
+  reloadOnOnline: true,
+  // PWA is disabled in development to prevent caching old code
   disable: process.env.NODE_ENV === "development",
+  // Crucial fix for icons/manifest not loading correctly in some Next.js builds
+  buildExcludes: [/middleware-manifest\.json$/],
 });
 
 const nextConfig = {
-  // Silence Turbopack warnings for Webpack-based plugins
-  experimental: {
-    turbopack: {},
-  },
-  // Ensure the app works correctly with the custom player and supabase
   reactStrictMode: true,
+  // Ensure Supabase images can be optimized/loaded
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+    ],
+  },
 };
 
-export default withPWA(nextConfig);
+export default pwaConfig(nextConfig);

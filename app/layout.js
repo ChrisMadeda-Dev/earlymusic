@@ -3,19 +3,30 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import PlayerWrapper from "./components/PlayerWrapper";
 import { PlayerProvider } from "./context/PlayerContext";
-import { Analytics } from "@vercel/analytics/react"; // Added Vercel Analytics
-import InstallPrompt from "./components/InstallPrompt"; // Added PWA Install Prompt
+import { Analytics } from "@vercel/analytics/react";
+import InstallPrompt from "./components/InstallPrompt";
+
+// NEW: In Next.js 14+, Viewport and ThemeColor must be exported separately
+export const viewport = {
+  themeColor: "#dc2626",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata = {
   title: "Early Music",
   description: "Music Streaming App",
   manifest: "/manifest.json",
-  themeColor: "#dc2626",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Early Music",
+  },
+  // Ensure icons are mapped for PWA and iOS discovery
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
   },
 };
 
@@ -24,8 +35,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-white text-neutral-900 antialiased">
         <PlayerProvider>
-          {/* Main App Shell */}
-          {/* Maintained min-h-[90vh] per your instructions */}
+          {/* Main App Shell 
+              Maintained min-h-[90vh] per your instructions.
+              Using h-screen ensures the sidebar/main scroll independently.
+          */}
           <div className="flex flex-col md:flex-row min-h-[90vh] h-screen overflow-hidden">
             <Sidebar />
 
@@ -37,13 +50,16 @@ export default function RootLayout({ children }) {
             </main>
           </div>
 
-          {/* THE FIX: Player stays mounted across navigation */}
+          {/* Player Wrapper: Persistent across route changes */}
           <PlayerWrapper />
 
-          {/* VERCEL ANALYTICS: Tracks users across the site */}
+          {/* Analytics: Vercel usage tracking */}
           <Analytics />
 
-          {/* PWA INSTALL PROMPT: Shows the pop-up to add to home screen */}
+          {/* InstallPrompt: 
+              This component should handle the 'beforeinstallprompt' event 
+              to show your custom "Download" button.
+          */}
           <InstallPrompt />
         </PlayerProvider>
       </body>
