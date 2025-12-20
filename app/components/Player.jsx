@@ -9,7 +9,7 @@ import {
   VolumeX,
   Disc,
   Repeat,
-  RotateCcw,
+  Shuffle,
   SkipBack,
   SkipForward,
 } from "lucide-react";
@@ -18,6 +18,7 @@ const Player = ({ song, songs, onSongSelect }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -39,8 +40,19 @@ const Player = ({ song, songs, onSongSelect }) => {
 
   const onPlayNext = () => {
     if (!songs || songs.length === 0) return;
-    const nextIndex = (currentIndex + 1) % songs.length;
-    onSongSelect(songs[nextIndex]);
+
+    if (isShuffle) {
+      let nextIndex = currentIndex;
+      if (songs.length > 1) {
+        while (nextIndex === currentIndex) {
+          nextIndex = Math.floor(Math.random() * songs.length);
+        }
+      }
+      onSongSelect(songs[nextIndex]);
+    } else {
+      const nextIndex = (currentIndex + 1) % songs.length;
+      onSongSelect(songs[nextIndex]);
+    }
   };
 
   const onPlayPrevious = () => {
@@ -96,7 +108,7 @@ const Player = ({ song, songs, onSongSelect }) => {
       <div className="max-w-[1400px] mx-auto px-5 py-3 md:px-8 h-full">
         <div className="flex flex-col md:flex-row items-center justify-between h-full gap-y-3">
           {/* TRACK INFO */}
-          <div className="flex items-center gap-x-3 w-full md:w-[30%] min-w-0">
+          <div className="flex items-center gap-x-3 w-full md:w-[25%] min-w-0">
             <div className="w-10 h-10 bg-neutral-900 rounded-lg flex-shrink-0 flex items-center justify-center shadow-lg">
               <Disc
                 className={`text-white ${isPlaying ? "animate-spin-slow" : ""}`}
@@ -104,10 +116,12 @@ const Player = ({ song, songs, onSongSelect }) => {
               />
             </div>
             <div className="truncate">
-              <p className="font-black text-[12px] text-neutral-900 truncate uppercase tracking-tighter mb-1">
+              {/* Title: Simple Semibold */}
+              <p className="text-[14px] font-semibold text-neutral-900 truncate tracking-tight mb-0.5 leading-none">
                 {song.title}
               </p>
-              <p className="text-[10px] font-bold text-neutral-400 truncate uppercase tracking-widest">
+              {/* Author: Simple Medium */}
+              <p className="text-[12px] font-medium text-neutral-400 truncate leading-none">
                 {song.author}
               </p>
             </div>
@@ -115,16 +129,28 @@ const Player = ({ song, songs, onSongSelect }) => {
 
           {/* CONTROLS */}
           <div className="flex flex-col items-center gap-y-1 w-full md:flex-1">
-            <div className="flex items-center justify-center gap-x-8">
+            <div className="flex items-center justify-center gap-x-4 md:gap-x-8">
+              <button
+                onClick={() => setIsShuffle(!isShuffle)}
+                className={`transition-colors active:scale-90 ${
+                  isShuffle
+                    ? "text-red-600"
+                    : "text-neutral-400 hover:text-neutral-900"
+                }`}
+              >
+                <Shuffle size={18} />
+              </button>
+
               <button
                 onClick={onPlayPrevious}
                 className="text-neutral-900 active:scale-90 transition"
               >
                 <SkipBack size={24} fill="currentColor" />
               </button>
+
               <button
                 onClick={togglePlay}
-                className="bg-red-600 rounded-full h-12 w-12 flex items-center justify-center text-white shadow-lg active:scale-95 transition"
+                className="bg-red-600 rounded-full h-12 w-12 flex items-center justify-center text-white shadow-lg active:scale-95 transition hover:bg-red-700"
               >
                 {isPlaying ? (
                   <Pause size={24} fill="currentColor" />
@@ -132,20 +158,34 @@ const Player = ({ song, songs, onSongSelect }) => {
                   <Play size={24} fill="currentColor" className="ml-1" />
                 )}
               </button>
+
               <button
                 onClick={onPlayNext}
                 className="text-neutral-900 active:scale-90 transition"
               >
                 <SkipForward size={24} fill="currentColor" />
               </button>
+
+              <button
+                onClick={() => setIsLooping(!isLooping)}
+                className={`transition-colors active:scale-90 ${
+                  isLooping
+                    ? "text-red-600"
+                    : "text-neutral-400 hover:text-neutral-900"
+                }`}
+              >
+                <Repeat size={18} />
+              </button>
             </div>
-            <div className="text-[9px] text-neutral-400 font-black tracking-[0.2em] tabular-nums uppercase">
-              {formatTime(currentTime)} / {formatTime(duration)}
+            {/* Time: Simple Medium Tabular */}
+            <div className="text-[11px] text-neutral-400 font-medium tabular-nums">
+              {formatTime(currentTime)}{" "}
+              <span className="mx-1 opacity-50">/</span> {formatTime(duration)}
             </div>
           </div>
 
           {/* VOLUME */}
-          <div className="hidden md:flex items-center gap-x-3 w-[30%] justify-end">
+          <div className="hidden md:flex items-center gap-x-3 w-[25%] justify-end">
             <button
               onClick={toggleMute}
               className="text-neutral-400 hover:text-red-600 transition"

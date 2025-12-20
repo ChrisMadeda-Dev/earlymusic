@@ -10,6 +10,9 @@ import {
   ShieldCheck,
   Music2,
   Search,
+  Edit3,
+  Check,
+  X,
 } from "lucide-react";
 import UploadModal from "../components/UploadModal";
 import { usePlayer } from "../context/PlayerContext";
@@ -20,6 +23,11 @@ export default function AdminDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Edit State
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editAuthor, setEditAuthor] = useState("");
 
   const router = useRouter();
   const timeoutRef = useRef(null);
@@ -71,6 +79,39 @@ export default function AdminDashboard() {
     if (data) setSongs(data);
   };
 
+  const handleEditClick = (song) => {
+    setEditingId(song.id);
+    setEditTitle(song.title);
+    setEditAuthor(song.author);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTitle("");
+    setEditAuthor("");
+  };
+
+  const handleUpdate = async (id) => {
+    try {
+      const { error } = await supabase
+        .from("songs")
+        .update({ title: editTitle, author: editAuthor })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setSongs((prev) =>
+        prev.map((s) =>
+          s.id === id ? { ...s, title: editTitle, author: editAuthor } : s
+        )
+      );
+      cancelEdit();
+    } catch (err) {
+      console.error(err);
+      alert("Update failed.");
+    }
+  };
+
   const handleDelete = async (id, path) => {
     const isConfirmed = confirm("Permanently delete this track?");
     if (!isConfirmed) return;
@@ -99,7 +140,7 @@ export default function AdminDashboard() {
     );
 
     return filtered.reduce((groups, song) => {
-      const letter = song.title[0].toUpperCase();
+      const letter = song.title[0]?.toUpperCase() || "#";
       if (!groups[letter]) groups[letter] = [];
       groups[letter].push(song);
       return groups;
@@ -179,26 +220,72 @@ export default function AdminDashboard() {
                       key={song.id}
                       className="bg-white p-4 rounded-2xl flex items-center justify-between group hover:bg-neutral-50 border border-transparent hover:border-neutral-100 transition-all duration-300"
                     >
-                      <div className="flex items-center gap-x-6">
-                        <div className="h-10 w-10 bg-neutral-50 rounded-lg flex items-center justify-center text-neutral-300 border border-neutral-100">
-                          <Music2 size={16} />
+                      {editingId === song.id ? (
+                        /* EDIT MODE */
+                        <div className="flex-1 flex flex-col md:flex-row items-center gap-3 pr-4 animate-in fade-in slide-in-from-left-2">
+                          <input
+                            autoFocus
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full md:flex-1 bg-neutral-100 border-none rounded-xl px-4 py-2 text-[15px] font-semibold outline-none focus:ring-2 ring-red-600/20"
+                            placeholder="Track Title"
+                          />
+                          <input
+                            value={editAuthor}
+                            onChange={(e) => setEditAuthor(e.target.value)}
+                            className="w-full md:flex-1 bg-neutral-100 border-none rounded-xl px-4 py-2 text-[13px] font-medium outline-none focus:ring-2 ring-red-600/20"
+                            placeholder="Artist Name"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleUpdate(song.id)}
+                              className="p-2 bg-red-600 text-white rounded-xl hover:bg-neutral-900 transition shadow-lg shadow-red-100"
+                            >
+                              <Check size={18} />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="p-2 bg-neutral-200 text-neutral-600 rounded-xl hover:bg-neutral-300 transition"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-neutral-900 text-[15px] leading-tight mb-0.5 tracking-tight">
-                            {song.title}
-                          </p>
-                          <p className="text-[13px] text-neutral-500 font-medium">
-                            {song.author}
-                          </p>
-                        </div>
-                      </div>
+                      ) : (
+                        /* VIEW MODE */
+                        <>
+                          <div className="flex items-center gap-x-6">
+                            <div className="h-10 w-10 bg-neutral-50 rounded-lg flex items-center justify-center text-neutral-300 border border-neutral-100">
+                              <Music2 size={16} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-neutral-900 text-[15px] leading-tight mb-0.5 tracking-tight">
+                                {song.title}
+                              </p>
+                              <p className="text-[13px] text-neutral-500 font-medium">
+                                {song.author}
+                              </p>
+                            </div>
+                          </div>
 
-                      <button
-                        onClick={() => handleDelete(song.id, song.song_path)}
-                        className="w-10 h-10 flex items-center justify-center text-neutral-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleEditClick(song)}
+                              className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                            >
+                              <Edit3 size={18} />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDelete(song.id, song.song_path)
+                              }
+                              className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
