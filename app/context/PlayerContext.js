@@ -1,26 +1,40 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 
 const PlayerContext = createContext();
 
-export function PlayerProvider({ children }) {
-  const [activeSong, setActiveSong] = useState(null);
-  const [songs, setSongs] = useState([]);
+export const PlayerProvider = ({ children }) => {
+  const [activeSong, setActiveSongState] = useState(null);
+  const [allSongs, setAllSongs] = useState([]); // Master list for Home
+  const [queue, setQueue] = useState([]); // Current playback list
+  const [isLoading, setIsLoading] = useState(true);
+
+  const setActiveSong = useCallback(
+    (song, customQueue = null) => {
+      setActiveSongState(song);
+      // If we provide a specific list (like Library), play from that.
+      // Otherwise, default to the master list.
+      setQueue(customQueue || allSongs);
+    },
+    [allSongs]
+  );
 
   return (
     <PlayerContext.Provider
-      value={{ activeSong, setActiveSong, songs, setSongs }}
+      value={{
+        activeSong,
+        setActiveSong,
+        allSongs,
+        setAllSongs,
+        queue,
+        isLoading,
+        setIsLoading,
+      }}
     >
       {children}
     </PlayerContext.Provider>
   );
-}
+};
 
-export function usePlayer() {
-  const context = useContext(PlayerContext);
-  if (!context) {
-    throw new Error("usePlayer must be used within a PlayerProvider");
-  }
-  return context;
-}
+export const usePlayer = () => useContext(PlayerContext);

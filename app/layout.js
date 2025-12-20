@@ -3,10 +3,20 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import PlayerWrapper from "./components/PlayerWrapper";
 import { PlayerProvider } from "./context/PlayerContext";
+import { Analytics } from "@vercel/analytics/react"; // Added Vercel Analytics
+import InstallPrompt from "./components/InstallPrompt"; // Added PWA Install Prompt
 
 export const metadata = {
-  title: "earlymusic",
-  description: "Pure Scarlet Sound",
+  title: "Early Music",
+  description: "Music Streaming App",
+  manifest: "/manifest.json",
+  themeColor: "#dc2626",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Early Music",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -15,6 +25,7 @@ export default function RootLayout({ children }) {
       <body className="bg-white text-neutral-900 antialiased">
         <PlayerProvider>
           {/* Main App Shell */}
+          {/* Maintained min-h-[90vh] per your instructions */}
           <div className="flex flex-col md:flex-row min-h-[90vh] h-screen overflow-hidden">
             <Sidebar />
 
@@ -26,11 +37,14 @@ export default function RootLayout({ children }) {
             </main>
           </div>
 
-          {/* THE FIX: Place the Player outside the main shell. 
-             Now, no matter what happens inside 'children' (including going to /admin), 
-             this component stays mounted.
-          */}
+          {/* THE FIX: Player stays mounted across navigation */}
           <PlayerWrapper />
+
+          {/* VERCEL ANALYTICS: Tracks users across the site */}
+          <Analytics />
+
+          {/* PWA INSTALL PROMPT: Shows the pop-up to add to home screen */}
+          <InstallPrompt />
         </PlayerProvider>
       </body>
     </html>

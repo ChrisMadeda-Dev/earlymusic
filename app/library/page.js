@@ -1,24 +1,28 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Header from "../components/Header";
 import SongItem from "../components/SongItem";
-import Player from "../components/Player";
 import Loader from "../components/Loader";
+import { usePlayer } from "../context/PlayerContext";
 import { Library as LibraryIcon, HeartOff } from "lucide-react";
 
 export default function LibraryPage() {
   const [librarySongs, setLibrarySongs] = useState([]);
-  const [activeSong, setActiveSong] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { setActiveSong } = usePlayer();
 
   const fetchLibrary = () => {
     if (typeof window !== "undefined") {
-      const saved = JSON.parse(
-        localStorage.getItem("earlymusic_library") || "[]"
-      );
-      setLibrarySongs(saved);
-      setIsLoading(false);
+      try {
+        const saved = JSON.parse(
+          localStorage.getItem("earlymusic_library") || "[]"
+        );
+        setLibrarySongs(saved);
+      } catch (error) {
+        console.error("Error loading library:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -28,19 +32,14 @@ export default function LibraryPage() {
     return () => window.removeEventListener("libraryUpdated", fetchLibrary);
   }, []);
 
-  // Sort and Group songs alphabetically
   const groupedSongs = useMemo(() => {
-    // 1. Sort all songs alphabetically by title
     const sorted = [...librarySongs].sort((a, b) =>
       a.title.localeCompare(b.title)
     );
 
-    // 2. Group them by first letter
     return sorted.reduce((groups, song) => {
-      const letter = song.title[0].toUpperCase();
-      if (!groups[letter]) {
-        groups[letter] = [];
-      }
+      const letter = song.title[0]?.toUpperCase() || "#";
+      if (!groups[letter]) groups[letter] = [];
       groups[letter].push(song);
       return groups;
     }, {});
@@ -49,41 +48,34 @@ export default function LibraryPage() {
   const alphabet = Object.keys(groupedSongs).sort();
 
   return (
-    <main className="min-h-[90vh] bg-white pb-24 relative">
-      <div className="px-8 py-4">
-        {/* Header Section */}
-        <div className="flex items-center gap-x-4 mb-10">
-          <div className="h-14 w-14 bg-red-600 rounded-2xl flex items-center justify-center shadow-xl shadow-red-100">
-            <LibraryIcon className="text-white" size={28} />
-          </div>
-          <div>
-            <h1 className="text-4xl font-black text-neutral-900 tracking-tighter uppercase">
-              Library
-            </h1>
-          </div>
+    <main className="min-h-[90vh] bg-white px-6 py-8 pb-32">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center gap-x-3 mb-12 px-2">
+          <LibraryIcon className="text-red-600" size={24} />
+          <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">
+            Library
+          </h1>
         </div>
 
         {isLoading ? (
           <Loader />
         ) : librarySongs.length > 0 ? (
-          <div className="flex flex-col gap-y-12">
+          <div className="flex flex-col gap-y-10">
             {alphabet.map((letter) => (
               <div key={letter} className="flex flex-col gap-y-4">
-                {/* Alphabet Label */}
-                <div className="border-b border-neutral-100 pb-2">
-                  <h2 className="text-2xl font-black text-red-600 uppercase">
+                <div className="flex items-center gap-x-4 border-b border-neutral-50 pb-3 px-2">
+                  <h2 className="text-3xl font-semibold text-red-600 tracking-tight">
                     {letter}
                   </h2>
                 </div>
 
-                {/* Songs under this letter */}
                 <div className="flex flex-col gap-y-1">
-                  {groupedSongs[letter].map((song, index) => (
+                  {groupedSongs[letter].map((song) => (
                     <SongItem
                       key={song.id}
                       song={song}
-                      number={index + 1}
-                      onClick={() => setActiveSong(song)}
+                      // PASS THE LIBRARY LIST HERE
+                      onClick={() => setActiveSong(song, librarySongs)}
                     />
                   ))}
                 </div>
@@ -91,26 +83,17 @@ export default function LibraryPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 text-center border-2 border-dashed border-neutral-100 rounded-[2rem]">
-            <HeartOff className="text-neutral-200 mb-4" size={40} />
-            <p className="text-sm font-black text-neutral-900 uppercase tracking-widest">
-              Collection empty
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <HeartOff className="text-neutral-200 mb-4" size={32} />
+            <p className="text-[15px] font-medium text-neutral-900">
+              Your library is empty
             </p>
-            <p className="text-[10px] text-neutral-400 font-bold uppercase mt-2">
-              Add songs to see them grouped here
+            <p className="text-[13px] text-neutral-400 mt-1">
+              Songs you heart will appear here.
             </p>
           </div>
         )}
       </div>
-
-      {activeSong && (
-        <Player
-          song={activeSong}
-          key={activeSong.id}
-          songs={librarySongs} // Keeps the player context for Next/Prev
-          onSongSelect={setActiveSong}
-        />
-      )}
     </main>
   );
 }

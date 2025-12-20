@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { usePlayer } from "../context/PlayerContext"; // Added Context
 import {
   Play,
   Pause,
@@ -14,8 +15,15 @@ import {
   SkipForward,
 } from "lucide-react";
 
-const Player = ({ song, songs, onSongSelect }) => {
+const Player = () => {
   const audioRef = useRef(null);
+  // Using global context instead of props to ensure the queue is always correct
+  const {
+    activeSong: song,
+    queue: songs,
+    setActiveSong: onSongSelect,
+  } = usePlayer();
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
@@ -25,7 +33,7 @@ const Player = ({ song, songs, onSongSelect }) => {
   const [volume, setVolume] = useState(1);
   const [audioUrl, setAudioUrl] = useState(null);
 
-  const currentIndex = (songs || []).findIndex((s) => s.id === song.id);
+  const currentIndex = (songs || []).findIndex((s) => s.id === song?.id);
 
   useEffect(() => {
     if (song) {
@@ -35,6 +43,8 @@ const Player = ({ song, songs, onSongSelect }) => {
 
       setAudioUrl(data.publicUrl);
       setIsPlaying(true);
+      // Reset progress when a new song starts
+      setCurrentTime(0);
     }
   }, [song]);
 
@@ -48,17 +58,17 @@ const Player = ({ song, songs, onSongSelect }) => {
           nextIndex = Math.floor(Math.random() * songs.length);
         }
       }
-      onSongSelect(songs[nextIndex]);
+      onSongSelect(songs[nextIndex], songs); // Pass queue back to keep context
     } else {
       const nextIndex = (currentIndex + 1) % songs.length;
-      onSongSelect(songs[nextIndex]);
+      onSongSelect(songs[nextIndex], songs);
     }
   };
 
   const onPlayPrevious = () => {
     if (!songs || songs.length === 0) return;
-    const prevIndex = currentIndex === 0 ? songs.length - 1 : currentIndex - 1;
-    onSongSelect(songs[prevIndex]);
+    const prevIndex = currentIndex <= 0 ? songs.length - 1 : currentIndex - 1;
+    onSongSelect(songs[prevIndex], songs);
   };
 
   const togglePlay = () => {
@@ -70,7 +80,7 @@ const Player = ({ song, songs, onSongSelect }) => {
   const toggleMute = () => {
     const newMuted = !isMuted;
     setIsMuted(newMuted);
-    audioRef.current.muted = newMuted;
+    if (audioRef.current) audioRef.current.muted = newMuted;
   };
 
   const formatTime = (time) => {
@@ -116,11 +126,9 @@ const Player = ({ song, songs, onSongSelect }) => {
               />
             </div>
             <div className="truncate">
-              {/* Title: Simple Semibold */}
               <p className="text-[14px] font-semibold text-neutral-900 truncate tracking-tight mb-0.5 leading-none">
                 {song.title}
               </p>
-              {/* Author: Simple Medium */}
               <p className="text-[12px] font-medium text-neutral-400 truncate leading-none">
                 {song.author}
               </p>
@@ -177,7 +185,6 @@ const Player = ({ song, songs, onSongSelect }) => {
                 <Repeat size={18} />
               </button>
             </div>
-            {/* Time: Simple Medium Tabular */}
             <div className="text-[11px] text-neutral-400 font-medium tabular-nums">
               {formatTime(currentTime)}{" "}
               <span className="mx-1 opacity-50">/</span> {formatTime(duration)}

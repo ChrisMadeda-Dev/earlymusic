@@ -78,6 +78,13 @@ const Sidebar = () => {
           <LikedSongs />
         </div>
       </div>
+
+      {/* CREDITS AT THE VERY BOTTOM */}
+      <div className="px-5 py-2">
+        <p className="text-[10px] text-neutral-400 font-medium tracking-wider uppercase opacity-60">
+          Created by Jonam
+        </p>
+      </div>
     </aside>
   );
 };
