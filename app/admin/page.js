@@ -18,7 +18,9 @@ import UploadModal from "../components/UploadModal";
 import { usePlayer } from "../context/PlayerContext";
 
 export default function AdminDashboard() {
-  const { songs, setSongs } = usePlayer();
+  // FIXED: Updated destructuring to match the updated Context variable names
+  const { allSongs, setAllSongs } = usePlayer();
+
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,9 @@ export default function AdminDashboard() {
       .from("songs")
       .select("*")
       .order("title", { ascending: true });
-    if (data) setSongs(data);
+
+    // FIXED: Using setAllSongs
+    if (data) setAllSongs(data);
   };
 
   const handleEditClick = (song) => {
@@ -100,7 +104,8 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      setSongs((prev) =>
+      // FIXED: Using setAllSongs
+      setAllSongs((prev) =>
         prev.map((s) =>
           s.id === id ? { ...s, title: editTitle, author: editAuthor } : s
         )
@@ -124,7 +129,8 @@ export default function AdminDashboard() {
         .eq("id", id);
       if (dbError) throw dbError;
 
-      setSongs((prev) => prev.filter((s) => s.id !== id));
+      // FIXED: Using setAllSongs
+      setAllSongs((prev) => prev.filter((s) => s.id !== id));
       handleLogout();
     } catch (err) {
       console.error(err);
@@ -133,7 +139,8 @@ export default function AdminDashboard() {
   };
 
   const groupedSongs = useMemo(() => {
-    const filtered = (songs || []).filter(
+    // FIXED: Using allSongs as the source
+    const filtered = (allSongs || []).filter(
       (s) =>
         s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.author.toLowerCase().includes(searchQuery.toLowerCase())
@@ -145,7 +152,7 @@ export default function AdminDashboard() {
       groups[letter].push(song);
       return groups;
     }, {});
-  }, [songs, searchQuery]);
+  }, [allSongs, searchQuery]);
 
   const alphabet = Object.keys(groupedSongs).sort();
 
@@ -154,7 +161,6 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-[90vh] bg-white p-6 md:p-10 pb-40">
       <div className="max-w-5xl mx-auto">
-        {/* HEADER */}
         <header className="flex flex-col gap-y-10 mb-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
@@ -195,7 +201,6 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* ALPHABETICAL LISTING */}
         <div className="flex flex-col gap-y-12">
           {alphabet.length === 0 ? (
             <div className="py-32 flex flex-col items-center justify-center border border-dashed border-neutral-100 rounded-[2rem] text-neutral-200">
@@ -221,7 +226,6 @@ export default function AdminDashboard() {
                       className="bg-white p-4 rounded-2xl flex items-center justify-between group hover:bg-neutral-50 border border-transparent hover:border-neutral-100 transition-all duration-300"
                     >
                       {editingId === song.id ? (
-                        /* EDIT MODE */
                         <div className="flex-1 flex flex-col md:flex-row items-center gap-3 pr-4 animate-in fade-in slide-in-from-left-2">
                           <input
                             autoFocus
@@ -252,7 +256,6 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       ) : (
-                        /* VIEW MODE */
                         <>
                           <div className="flex items-center gap-x-6">
                             <div className="h-10 w-10 bg-neutral-50 rounded-lg flex items-center justify-center text-neutral-300 border border-neutral-100">
