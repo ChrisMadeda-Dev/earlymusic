@@ -46,7 +46,11 @@ export default function Home() {
   const alphabet = Object.keys(groupedSongs).sort();
 
   return (
-    <main className="min-h-[90vh] bg-white px-6 py-8 pb-32">
+    /* FIXED: Removed the 'mt' margin since we aren't using fixed anymore.
+       Added 'relative' to ensure the sticky header in the parent layout 
+       knows where to anchor.
+    */
+    <main className="min-h-[90vh] bg-white px-6 py-8 pb-40 relative">
       <div className="max-w-5xl mx-auto">
         {isLoading ? (
           <Loader />
