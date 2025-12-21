@@ -139,7 +139,12 @@ const Player = () => {
           <div className="flex flex-col items-center gap-y-1 w-full md:flex-1">
             <div className="flex items-center justify-center gap-x-4 md:gap-x-8">
               <button
-                onClick={() => setIsShuffle(!isShuffle)}
+                type="button"
+                onClick={() => {
+                  const newState = !isShuffle;
+                  setIsShuffle(newState);
+                  if (newState) setIsLooping(false); // Mutually exclusive
+                }}
                 className={`transition-colors active:scale-90 ${
                   isShuffle
                     ? "text-red-600"
@@ -150,6 +155,7 @@ const Player = () => {
               </button>
 
               <button
+                type="button"
                 onClick={onPlayPrevious}
                 className="text-neutral-900 active:scale-90 transition"
               >
@@ -157,6 +163,7 @@ const Player = () => {
               </button>
 
               <button
+                type="button"
                 onClick={togglePlay}
                 className="bg-red-600 rounded-full h-12 w-12 flex items-center justify-center text-white shadow-lg active:scale-95 transition hover:bg-red-700"
               >
@@ -168,6 +175,7 @@ const Player = () => {
               </button>
 
               <button
+                type="button"
                 onClick={onPlayNext}
                 className="text-neutral-900 active:scale-90 transition"
               >
@@ -175,7 +183,12 @@ const Player = () => {
               </button>
 
               <button
-                onClick={() => setIsLooping(!isLooping)}
+                type="button"
+                onClick={() => {
+                  const newState = !isLooping;
+                  setIsLooping(newState);
+                  if (newState) setIsShuffle(false); // Mutually exclusive
+                }}
                 className={`transition-colors active:scale-90 ${
                   isLooping
                     ? "text-red-600"
@@ -194,6 +207,7 @@ const Player = () => {
           {/* VOLUME */}
           <div className="hidden md:flex items-center gap-x-3 w-[25%] justify-end">
             <button
+              type="button"
               onClick={toggleMute}
               className="text-neutral-400 hover:text-red-600 transition"
             >

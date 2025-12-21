@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import {
@@ -18,7 +18,6 @@ import UploadModal from "../components/UploadModal";
 import { usePlayer } from "../context/PlayerContext";
 
 export default function AdminDashboard() {
-  // FIXED: Updated destructuring to match the updated Context variable names
   const { allSongs, setAllSongs } = usePlayer();
 
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -32,23 +31,21 @@ export default function AdminDashboard() {
   const [editAuthor, setEditAuthor] = useState("");
 
   const router = useRouter();
-  const timeoutRef = useRef(null);
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
+  // Manual Logout: Only happens when the user clicks the button
   const handleLogout = () => {
     setIsAuthorized(false);
     router.replace("/");
-  };
-
-  const resetTimer = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => handleLogout(), 300000);
   };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const checkAuth = () => {
+      // If already authorized in this session, don't prompt again
+      if (isAuthorized) return;
+
       const password = prompt("Admin Access Required:");
 
       if (password === ADMIN_PASSWORD && ADMIN_PASSWORD) {
@@ -61,17 +58,8 @@ export default function AdminDashboard() {
     };
 
     checkAuth();
-
-    window.addEventListener("mousemove", resetTimer);
-    window.addEventListener("keydown", resetTimer);
-
-    return () => {
-      window.removeEventListener("mousemove", resetTimer);
-      window.removeEventListener("keydown", resetTimer);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      setIsAuthorized(false);
-    };
-  }, [router, ADMIN_PASSWORD]);
+    // Removed all auto-logout timers and listeners
+  }, [router, ADMIN_PASSWORD, isAuthorized]);
 
   const fetchSongs = async () => {
     const { data } = await supabase
@@ -79,7 +67,6 @@ export default function AdminDashboard() {
       .select("*")
       .order("title", { ascending: true });
 
-    // FIXED: Using setAllSongs
     if (data) setAllSongs(data);
   };
 
@@ -104,7 +91,6 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      // FIXED: Using setAllSongs
       setAllSongs((prev) =>
         prev.map((s) =>
           s.id === id ? { ...s, title: editTitle, author: editAuthor } : s
@@ -127,11 +113,11 @@ export default function AdminDashboard() {
         .from("songs")
         .delete()
         .eq("id", id);
+
       if (dbError) throw dbError;
 
-      // FIXED: Using setAllSongs
+      // Update local state without redirecting
       setAllSongs((prev) => prev.filter((s) => s.id !== id));
-      handleLogout();
     } catch (err) {
       console.error(err);
       alert("Deletion failed.");
@@ -139,7 +125,6 @@ export default function AdminDashboard() {
   };
 
   const groupedSongs = useMemo(() => {
-    // FIXED: Using allSongs as the source
     const filtered = (allSongs || []).filter(
       (s) =>
         s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -159,7 +144,7 @@ export default function AdminDashboard() {
   if (loading || !isAuthorized) return null;
 
   return (
-    <div className="min-h-[90vh] bg-white p-6 md:p-10 pb-40">
+    <main className="min-h-[90vh] bg-white p-6 md:p-10 pb-40">
       <div className="max-w-5xl mx-auto">
         <header className="flex flex-col gap-y-10 mb-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -193,7 +178,7 @@ export default function AdminDashboard() {
             />
             <input
               type="text"
-              placeholder="Search tracks or artists..."
+              placeholder="Search tracks or artists in vault..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-neutral-50 border border-neutral-100 rounded-2xl py-5 pl-16 pr-8 outline-none focus:border-red-600 focus:bg-white transition-all font-medium text-neutral-900 text-[15px]"
@@ -206,7 +191,7 @@ export default function AdminDashboard() {
             <div className="py-32 flex flex-col items-center justify-center border border-dashed border-neutral-100 rounded-[2rem] text-neutral-200">
               <Music2 size={48} strokeWidth={1.5} className="mb-4 opacity-20" />
               <p className="font-medium text-[13px] text-neutral-400">
-                No tracks found in the vault
+                No matching tracks found
               </p>
             </div>
           ) : (
@@ -232,18 +217,16 @@ export default function AdminDashboard() {
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
                             className="w-full md:flex-1 bg-neutral-100 border-none rounded-xl px-4 py-2 text-[15px] font-semibold outline-none focus:ring-2 ring-red-600/20"
-                            placeholder="Track Title"
                           />
                           <input
                             value={editAuthor}
                             onChange={(e) => setEditAuthor(e.target.value)}
                             className="w-full md:flex-1 bg-neutral-100 border-none rounded-xl px-4 py-2 text-[13px] font-medium outline-none focus:ring-2 ring-red-600/20"
-                            placeholder="Artist Name"
                           />
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleUpdate(song.id)}
-                              className="p-2 bg-red-600 text-white rounded-xl hover:bg-neutral-900 transition shadow-lg shadow-red-100"
+                              className="p-2 bg-red-600 text-white rounded-xl hover:bg-neutral-900 transition"
                             >
                               <Check size={18} />
                             </button>
@@ -258,11 +241,11 @@ export default function AdminDashboard() {
                       ) : (
                         <>
                           <div className="flex items-center gap-x-6">
-                            <div className="h-10 w-10 bg-neutral-50 rounded-lg flex items-center justify-center text-neutral-300 border border-neutral-100">
+                            <div className="h-10 w-10 bg-neutral-50 rounded-lg flex items-center justify-center text-neutral-300">
                               <Music2 size={16} />
                             </div>
                             <div>
-                              <p className="font-semibold text-neutral-900 text-[15px] leading-tight mb-0.5 tracking-tight">
+                              <p className="font-semibold text-neutral-900 text-[15px] leading-tight">
                                 {song.title}
                               </p>
                               <p className="text-[13px] text-neutral-500 font-medium">
@@ -271,10 +254,10 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => handleEditClick(song)}
-                              className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                              className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                             >
                               <Edit3 size={18} />
                             </button>
@@ -282,7 +265,7 @@ export default function AdminDashboard() {
                               onClick={() =>
                                 handleDelete(song.id, song.song_path)
                               }
-                              className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                              className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -303,9 +286,9 @@ export default function AdminDashboard() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => {
           fetchSongs();
-          handleLogout();
+          // NO handleLogout() here - stay in the vault after upload
         }}
       />
-    </div>
+    </main>
   );
 }

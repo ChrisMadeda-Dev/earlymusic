@@ -9,7 +9,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
   const [author, setAuthor] = useState("");
   const [songFile, setSongFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0); // Track progress percentage
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   if (!isOpen) return null;
 
@@ -19,27 +19,32 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       setIsLoading(true);
-      setUploadProgress(0); // Reset progress
+      setUploadProgress(0);
 
       const fileExt = songFile.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      // Using a timestamp for better uniqueness
+      const fileName = `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Upload to Supabase with progress tracking
-      const { error: uploadError } = await supabase.storage
+      // UPLOAD WITH PROGRESS HANDLING
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("songs")
         .upload(filePath, songFile, {
           cacheControl: "3600",
           upsert: false,
-          // Corrected progress listener for real-time state updates
-          onUploadProgress: (progress) => {
-            const percentage = (progress.loaded / progress.total) * 100;
-            setUploadProgress(Math.round(percentage));
+          // Use the native progress event
+          onUploadProgress: (progressEvent) => {
+            const percent = (progressEvent.loaded / progressEvent.total) * 100;
+            // Use Math.floor to avoid jittery 100% before completion
+            setUploadProgress(Math.floor(percent));
           },
         });
 
       if (uploadError) throw uploadError;
 
+      // DATABASE INSERT
       const { error: dbError } = await supabase.from("songs").insert({
         title: title,
         author: author,
@@ -50,13 +55,14 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
       onSuccess();
       onClose();
+      // Reset form
       setTitle("");
       setAuthor("");
       setSongFile(null);
       setUploadProgress(0);
     } catch (error) {
-      console.error(error);
-      alert("Error uploading song.");
+      console.error("Upload failed:", error);
+      alert(error.message || "Error uploading song.");
     } finally {
       setIsLoading(false);
     }
@@ -72,16 +78,16 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-black mb-1 text-neutral-900 tracking-tighter uppercase">
+        <h2 className="text-2xl font-semibold mb-1 text-neutral-900 tracking-tight">
           Upload Track
         </h2>
-        <p className="text-neutral-500 mb-6 text-xs font-bold uppercase tracking-wider">
-          Add to library
+        <p className="text-neutral-500 mb-6 text-sm">
+          Add a new song to your library.
         </p>
 
         <form onSubmit={handleUpload} className="flex flex-col gap-y-5">
           <div className="flex flex-col gap-y-1">
-            <label className="text-[10px] font-black uppercase text-neutral-500 ml-1 tracking-widest">
+            <label className="text-xs font-medium text-neutral-500 ml-1">
               Track Title
             </label>
             <input
@@ -89,13 +95,13 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
               placeholder="e.g., Ujazaye"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600 focus:bg-white text-neutral-900 font-bold placeholder:text-neutral-400 transition"
+              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600/10 focus:border-red-600 focus:bg-white text-neutral-900 transition"
               required
             />
           </div>
 
           <div className="flex flex-col gap-y-1">
-            <label className="text-[10px] font-black uppercase text-neutral-500 ml-1 tracking-widest">
+            <label className="text-xs font-medium text-neutral-500 ml-1">
               Artist Name
             </label>
             <input
@@ -103,7 +109,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
               placeholder="e.g., Pastor Marita Mbae"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600 focus:bg-white text-neutral-900 font-bold placeholder:text-neutral-400 transition"
+              className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-red-600/10 focus:border-red-600 focus:bg-white text-neutral-900 transition"
               required
             />
           </div>
@@ -111,7 +117,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="p-6 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50 hover:border-red-300 transition cursor-pointer relative group">
             <input
               type="file"
-              accept=".mp3"
+              accept="audio/mpeg, audio/mp3"
               onChange={(e) => setSongFile(e.target.files[0])}
               className="absolute inset-0 opacity-0 cursor-pointer z-10"
               required={!isLoading}
@@ -126,20 +132,24 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
                 } transition-colors`}
                 size={32}
               />
-              <p className="text-sm font-black text-neutral-900 truncate max-w-full px-2">
-                {songFile ? songFile.name : "Choose MP3 File"}
+              <p className="text-sm text-neutral-600 truncate max-w-full px-2">
+                {songFile ? songFile.name : "Select MP3 File"}
               </p>
             </div>
           </div>
 
-          {/* UPLOAD PROGRESS UI - Updated for visibility */}
+          {/* PROGRESS BAR SECTION */}
           {isLoading && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
-              <div className="flex justify-between items-center text-[10px] font-black uppercase text-red-600 tracking-widest">
-                <span>Uploading to server</span>
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+              <div className="flex justify-between items-center text-xs font-medium text-red-600">
+                <span>
+                  {uploadProgress === 100
+                    ? "Finalizing..."
+                    : "Uploading track..."}
+                </span>
                 <span className="tabular-nums">{uploadProgress}%</span>
               </div>
-              <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-red-600 transition-all duration-300 ease-out"
                   style={{ width: `${uploadProgress}%` }}
@@ -151,9 +161,9 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-red-600 py-4 rounded-xl text-white font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            className="bg-red-600 py-3.5 rounded-xl text-white font-medium hover:bg-neutral-900 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
-            {isLoading ? `Publishing ${uploadProgress}%` : "Publish Track"}
+            {isLoading ? `Publishing...` : "Publish Track"}
           </button>
         </form>
       </div>
